@@ -47,11 +47,11 @@ public class CreateSampleDataCrate {
 		
 		
 		try {
-			csdc.writeCreditcardsToCrate();
-			csdc.writePersonsToCrate();
-			csdc.writeProductsToCrate();
-			csdc.writeShopusersToCrate();
-			csdc.writeOrdersToCrate();
+		//	csdc.writeCreditcardsToCrate();
+		//	csdc.writePersonsToCrate();
+		//	csdc.writeProductsToCrate();
+		//	csdc.writeShopusersToCrate();
+		//	csdc.writeOrdersToCrate();
 			csdc.writeOrderlinesToCrate();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -323,7 +323,7 @@ public class CreateSampleDataCrate {
 		PreparedStatement statement = null;
 		
 		String insertTableSQL = "INSERT INTO orderline (orderline_id, order_id, product_id, amount) "
-								+ "VALUES (?,?,?,?)";
+								+ "VALUES (?,?,?,?) ";
 		try {
 			dbConnection = ConnectionHelperCrate.getDBConnection();
 			
