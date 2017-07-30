@@ -47,11 +47,11 @@ public class CreateSampleDataCrate {
 		
 		
 		try {
-		//	csdc.writeCreditcardsToCrate();
-		//	csdc.writePersonsToCrate();
-		//	csdc.writeProductsToCrate();
-		//	csdc.writeShopusersToCrate();
-		//	csdc.writeOrdersToCrate();
+			csdc.writeCreditcardsToCrate();
+			csdc.writePersonsToCrate();
+			csdc.writeProductsToCrate();
+			csdc.writeShopusersToCrate();
+			csdc.writeOrdersToCrate();
 			csdc.writeOrderlinesToCrate();
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
@@ -133,11 +133,25 @@ public class CreateSampleDataCrate {
 		Product p1;
 		for (int i = 1; i <= 1000000; i++) {
 			p1 = new Product(i, "Product"+i, "The best Product!", randy.nextFloat()*randy.nextInt(1000), randy.nextFloat()*randy.nextInt(500));
+			fillProducts2Categories(p1);
 			productlist.add(p1);
 		}
 		endtime = System.nanoTime();
 		System.out.println("Duration of fillProducts (ms): "+(endtime-starttime)/1000000);
 		
+	}
+	
+	/**
+	 * Fill some sample Categories into the Products
+	 */
+	private void fillProducts2Categories(Product p) {
+		Random randy = new Random();
+		HashSet<String> cats = new HashSet<String>();
+		//set up to 10 categories for the product
+		for(int j = 1; j <= randy.nextInt(9)+1; j++) {
+			cats.add("category"+j);
+		}
+		p.setCategories(cats);	
 	}
 	
 	/**
@@ -272,26 +286,31 @@ public class CreateSampleDataCrate {
 		
 		Connection dbConnection = null;
 		PreparedStatement statement = null;
+		int[] results;
+		int cntr = 1;
 		
 		String insertTableSQL = "INSERT INTO creditcard (creditcard_id, cardname, cardnumber, expiry_date) "
 								+ "VALUES (?,?,?,?)";
 		try {
 			dbConnection = ConnectionHelperCrate.getDBConnection();
-			
+			statement = dbConnection.prepareStatement(insertTableSQL);
 			for(Creditcard c : creditcardlist) {
-				statement = dbConnection.prepareStatement(insertTableSQL);
 				
 				statement.setInt(1, c.getCreditcard_id()); // the 1. ? from the PreparedStatement
 				statement.setString(2, c.getCardname()); // the 2. ? from the PreparedStatement
 				statement.setString(3, c.getCardnumber()); // the 3. ? from the PreparedStatement
 				statement.setTimestamp(4, (new java.sql.Timestamp(c.getExpiry_date().getTime())) ); // the 4. ? from the PreparedStatement
-				
+				statement.addBatch();
 				// execute insert SQL statement
-				statement.executeUpdate();
-				
-				statement.close();
+				//statement.executeUpdate();
+				if(cntr%2000 == 0) {
+					results = statement.executeBatch();
+				}
+				cntr++;
+				//statement.close();
 			} 
-		
+			results = statement.executeBatch();
+			statement.close();
 			System.out.println("Records are inserted into CREDITCARD table!");
 
 		} catch (SQLException e) {
@@ -308,56 +327,6 @@ public class CreateSampleDataCrate {
 		endtime = System.nanoTime();
 		System.out.println("Duration of writeCreditcardsToCrate (ms): "+(endtime-starttime)/1000000);
 	}
-	
-
-
-	/**
-	 * Insert the Orderlines from the ArrayList into the Crate DB
-	 */
-	private void writeOrderlinesToCrate() throws SQLException {
-		long starttime;
-		long endtime;
-		starttime = System.nanoTime();
-		
-		Connection dbConnection = null;
-		PreparedStatement statement = null;
-		
-		String insertTableSQL = "INSERT INTO orderline (orderline_id, order_id, product_id, amount) "
-								+ "VALUES (?,?,?,?) ";
-		try {
-			dbConnection = ConnectionHelperCrate.getDBConnection();
-			
-			for(Orderline o : orderlinelist) {
-				statement = dbConnection.prepareStatement(insertTableSQL);
-				
-				statement.setInt(1, o.getOrderline_id()); // the 1. ? from the PreparedStatement
-				statement.setInt(2, o.getOrder().getOrder_id()); // the 2. ? from the PreparedStatement
-				statement.setInt(3, o.getProduct().getProduct_id()); // the 3. ? from the PreparedStatement
-				statement.setFloat(4, o.getAmount()); // the 4. ? from the PreparedStatement
-
-				// execute insert SQL statement
-				statement.executeUpdate();
-				
-				statement.close();
-			} 
-		
-			System.out.println("Records are inserted into ORDERLINE table!");
-
-		} catch (SQLException e) {
-			System.out.println(e.getMessage());
-		} finally {
-			if (statement != null) {
-				statement.close();
-			}
-			if (dbConnection != null) {
-				dbConnection.close();
-			}
-		}
-		
-		endtime = System.nanoTime();
-		System.out.println("Duration of writeOrderlinesToCrate (ms): "+(endtime-starttime)/1000000);
-		
-	}
 
 
 	/**
@@ -370,25 +339,30 @@ public class CreateSampleDataCrate {
 		
 		Connection dbConnection = null;
 		PreparedStatement statement = null;
+		int[] results;
+		int cntr = 1;
 		
 		String insertTableSQL = "INSERT INTO orders (order_id, order_date, username) "
 								+ "VALUES (?,?,?)";
 		try {
 			dbConnection = ConnectionHelperCrate.getDBConnection();
-			
+			statement = dbConnection.prepareStatement(insertTableSQL);
 			for(Orders o : orderlist) {
-				statement = dbConnection.prepareStatement(insertTableSQL);
 				
 				statement.setInt(1, o.getOrder_id()); // the 1. ? from the PreparedStatement
 				statement.setTimestamp(2, (new java.sql.Timestamp(o.getOrder_date().getTime())) ); // the 2. ? from the PreparedStatement
 				statement.setString(3, o.getUser().getUsername()); // the 3. ? from the PreparedStatement
-
+				statement.addBatch();
 				// execute insert SQL statement
-				statement.executeUpdate();
-				
-				statement.close();
+				//statement.executeUpdate();
+				if(cntr%2000 == 0) {
+					results = statement.executeBatch();
+				}
+				cntr++;
+				//statement.close();
 			} 
-		
+			results = statement.executeBatch();
+			statement.close();
 			System.out.println("Records are inserted into ORDERS table!");
 
 		} catch (SQLException e) {
@@ -418,15 +392,16 @@ public class CreateSampleDataCrate {
 		
 		Connection dbConnection = null;
 		PreparedStatement statement = null;
+		int[] results;
+		int cntr = 1;
 		
 		String insertTableSQL = "INSERT INTO shopuser (username, email, pwd, created_date, locked_date, person_id) "
 								+ "VALUES (?,?,?,?,?,?)";
+		
 		try {
 			dbConnection = ConnectionHelperCrate.getDBConnection();
-			
+			statement = dbConnection.prepareStatement(insertTableSQL);
 			for(Shopuser s : shopuserlist) {
-				statement = dbConnection.prepareStatement(insertTableSQL);
-				
 				statement.setString(1, s.getUsername()); // the 1. ? from the PreparedStatement
 				statement.setString(2, s.getEmail()); // the 2. ? from the PreparedStatement
 				statement.setString(3, s.getPwd()); // the 3. ? from the PreparedStatement
@@ -438,13 +413,17 @@ public class CreateSampleDataCrate {
 					statement.setTimestamp(5, null); // the 5. ? from the PreparedStatement
 				}
 				statement.setInt(6, s.getPerson().getPerson_id()); // the 6. ? from the PreparedStatement
-
+				statement.addBatch();
 				// execute insert SQL statement
-				statement.executeUpdate();
-				
-				statement.close();
+				//statement.executeUpdate();
+				if(cntr%2000 == 0) {
+					results = statement.executeBatch();
+				}
+				cntr++;
+				//statement.close();
 			} 
-		
+			results = statement.executeBatch();
+			statement.close();
 			System.out.println("Records are inserted into SHOPUSER table!");
 
 		} catch (SQLException e) {
@@ -475,15 +454,16 @@ public class CreateSampleDataCrate {
 		
 		Connection dbConnection = null;
 		PreparedStatement statement = null;
+		int[] results;
+		int cntr = 1;
 		
 		String insertTableSQL = "INSERT INTO person (person_id, firstname, lastname, birthdate, phone, country, city, zip, street, creditcard_id) "
 								+ "VALUES (?,?,?,?,?,?,?,?,?,?)";
 		try {
 			dbConnection = ConnectionHelperCrate.getDBConnection();
+			statement = dbConnection.prepareStatement(insertTableSQL);
 			
 			for(Person p : personlist) {
-				statement = dbConnection.prepareStatement(insertTableSQL);
-				
 				statement.setInt(1, p.getPerson_id()); // the 1. ? from the PreparedStatement
 				statement.setString(2, p.getFirstname()); // the 2. ? from the PreparedStatement
 				statement.setString(3, p.getLastname()); // the 3. ? from the PreparedStatement
@@ -494,13 +474,19 @@ public class CreateSampleDataCrate {
 				statement.setString(8, p.getZip()); // the 8. ? from the PreparedStatement
 				statement.setString(9, p.getStreet()); // the 9. ? from the PreparedStatement
 				statement.setInt(10, p.getCreditcard().getCreditcard_id()); // the 10. ? from the PreparedStatement
-				
+				statement.addBatch();
 				// execute insert SQL statement
-				statement.executeUpdate();
+				//statement.executeUpdate();
 				
-				statement.close();
+				if(cntr%2000 == 0) {
+					results = statement.executeBatch();
+				}
+				cntr++;
+				
+				//statement.close();
 			} 
-		
+			results = statement.executeBatch();
+			statement.close();
 			System.out.println("Records are inserted into PERSON table!");
 
 		} catch (SQLException e) {
@@ -531,26 +517,36 @@ public class CreateSampleDataCrate {
 		Connection dbConnection = null;
 		PreparedStatement statement = null;
 		
+		int[] results;
+		int cntr = 1;
+		
 		String insertTableSQL = "INSERT INTO product (product_id, product_name, product_description, price, in_stock) "
 								+ "VALUES (?,?,?,?,?)";
 		try {
 			dbConnection = ConnectionHelperCrate.getDBConnection();
-			
+			statement = dbConnection.prepareStatement(insertTableSQL);
 			for(Product p : productlist) {
-				statement = dbConnection.prepareStatement(insertTableSQL);
 				
 				statement.setInt(1, p.getProduct_id()); // the 1. ? from the PreparedStatement
 				statement.setString(2, p.getProduct_Name()); // the 2. ? from the PreparedStatement
 				statement.setString(3, p.getProduct_Description()); // the 3. ? from the PreparedStatement
 				statement.setFloat(4, p.getPrice()); // the 4. ? from the PreparedStatement
 				statement.setFloat(5, p.getIn_stock()); // the 5. ? from the PreparedStatement
+				//statement.setArray(parameterIndex, x);
 
+				statement.addBatch();
 				// execute insert SQL statement
-				statement.executeUpdate();
+				//statement.executeUpdate();
 				
-				statement.close();
+				if(cntr%2000 == 0) {
+					results = statement.executeBatch();
+				}
+				cntr++;
+				
+				//statement.close();
 			} 
-		
+			results = statement.executeBatch();
+			statement.close();
 			System.out.println("Records are inserted into PRODUCT table!");
 
 		} catch (SQLException e) {
@@ -568,6 +564,71 @@ public class CreateSampleDataCrate {
 		System.out.println("Duration of writeProductsToCrate (ms): "+(endtime-starttime)/1000000);
 		
 	}
+	
+	
+	//--------------------------
+	
+
+	/**
+	 * Insert the Orderlines from the ArrayList into the Crate DB
+	 */
+	private void writeOrderlinesToCrate() throws SQLException {
+		long starttime;
+		long endtime;
+		starttime = System.nanoTime();
+		
+		Connection dbConnection = null;
+		PreparedStatement statement = null;
+		
+		int[] results;
+		int cntr = 1;
+		
+		String insertTableSQL = "INSERT INTO orderline (orderline_id, order_id, product_id, amount) "
+								+ "VALUES (?,?,?,?) ";
+		try {
+			dbConnection = ConnectionHelperCrate.getDBConnection();
+			statement = dbConnection.prepareStatement(insertTableSQL);
+			for(Orderline o : orderlinelist) {
+				
+				statement.setInt(1, o.getOrderline_id()); // the 1. ? from the PreparedStatement
+				statement.setInt(2, o.getOrder().getOrder_id()); // the 2. ? from the PreparedStatement
+				statement.setInt(3, o.getProduct().getProduct_id()); // the 3. ? from the PreparedStatement
+				statement.setFloat(4, o.getAmount()); // the 4. ? from the PreparedStatement
+
+				statement.addBatch();
+				
+				// execute insert SQL statement
+				//statement.executeUpdate();
+				
+				if(cntr%2000 == 0) {
+					results = statement.executeBatch();
+				}
+				cntr++;
+				
+				//statement.close();
+			} 
+			results = statement.executeBatch();
+			statement.close();
+			
+			System.out.println("Records are inserted into ORDERLINE table!");
+
+		} catch (SQLException e) {
+			System.out.println(e.getMessage());
+		} finally {
+			if (statement != null) {
+				statement.close();
+			}
+			if (dbConnection != null) {
+				dbConnection.close();
+			}
+		}
+		
+		endtime = System.nanoTime();
+		System.out.println("Duration of writeOrderlinesToCrate (ms): "+(endtime-starttime)/1000000);
+		
+	}
+	
+	//--------------------------
 
 
 

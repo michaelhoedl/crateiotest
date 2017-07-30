@@ -19,7 +19,8 @@ create table product (
     product_name string,
     product_description string,
     price float,
-    in_stock float
+    in_stock float,
+    categories array(object as (name string))
 );
 
 
